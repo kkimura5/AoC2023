@@ -20,7 +20,59 @@ namespace AoC
             RunDay5();
             RunDay6();
             RunDay7();
+            RunDay8();
             Console.ReadKey();
+        }
+
+        private static void RunDay8()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day8.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day8_training.txt").ToList();
+            string sequence = lines[0];
+            var instructions = lines.Skip(2).Select(x => new MapInstruction(x)).ToList();
+            foreach (var instruction in instructions)
+            {
+                instruction.SetLeft(instructions.Single(x => x.Node == instruction.Left));
+                instruction.SetRight(instructions.Single(x => x.Node == instruction.Right));
+            }
+
+            long numSteps = FindNumStepsToNode(sequence, instructions.Single(x => x.Node == "AAA"), "ZZZ");
+
+            Console.WriteLine($"Day 8 part 1: {numSteps}");
+
+            numSteps = 0;
+
+            var currentInstructions = instructions.Where(x => x.Node.EndsWith("A")).ToList();
+            var zinstructions = instructions.Where(x => x.Node.EndsWith("Z")).ToList();
+
+            long numSteps2 = 1;
+            foreach (var instruction in currentInstructions)
+            {
+                numSteps2 *= FindNumStepsToNode(sequence, instruction, "Z");
+                while (((numSteps2 / sequence.Length) % sequence.Length) == 0)
+                {
+                    numSteps2 /= sequence.Length;
+                }
+            }
+
+            Console.WriteLine($"Day 8 part 2: {numSteps2}");
+        }
+
+        private static long FindNumStepsToNode(string sequence, MapInstruction startingInstruction, string node)
+        {
+            var currentInstruction = startingInstruction;
+            long numSteps = 0;
+            var firstTime = true;
+            while ((currentInstruction.Node != node && !currentInstruction.Node.EndsWith(node)) || firstTime)
+            {
+                firstTime = false;
+                var move = sequence[(int)(numSteps % sequence.Length)];
+                currentInstruction = move == 'R' ? currentInstruction.GetRightInstruction() : currentInstruction.GetLeftInstruction();
+
+                numSteps++;
+            }
+
+            return numSteps;
         }
 
         private static void RunDay7()
