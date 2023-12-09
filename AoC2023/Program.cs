@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management.Instrumentation;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -21,7 +22,61 @@ namespace AoC
             RunDay6();
             RunDay7();
             RunDay8();
+            RunDay9();
             Console.ReadKey();
+        }
+
+        private static void RunDay9()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day9.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day9_training.txt").ToList();
+            var sequences = new List<OasisSequence>();
+            foreach (var line in lines)
+            {
+                sequences.Add(new OasisSequence(line.Split(' ').Select(x => long.Parse(x)).ToList()));
+            }
+
+            var endValues = new List<long>();
+            var startValues = new List<long>();
+            foreach (var sequence in sequences)
+            {
+                var allSequences = new List<OasisSequence>() { sequence };
+                OasisSequence currentSequence = sequence;
+                do
+                {
+                    currentSequence = currentSequence.GetChildSequence();
+                    allSequences.Add(currentSequence);
+                } while (!allSequences.Last().IsEnd());
+
+                allSequences.Reverse();
+
+                long previous = 0;
+                long finalValue = 0;
+                for (var i = 1; i<allSequences.Count; i++)
+                {
+                    var childSequence = allSequences[i];
+
+                    finalValue = childSequence.Values.Last() + previous;
+                    previous = finalValue;
+                }
+
+                endValues.Add(finalValue);
+
+                previous = 0;
+                finalValue = 0;
+                for (var i = 1; i < allSequences.Count; i++)
+                {
+                    var childSequence = allSequences[i];
+
+                    finalValue = childSequence.Values.First() - previous;
+                    previous = finalValue;
+                }
+
+                startValues.Add(finalValue);
+            }
+
+            Console.WriteLine($"Day 9 part 1: {endValues.Sum()}");
+            Console.WriteLine($"Day 9 part 2: {startValues.Sum()}");
         }
 
         private static void RunDay8()
