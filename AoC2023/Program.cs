@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Management.Instrumentation;
 using System.Runtime.Remoting.Messaging;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AoC
@@ -23,7 +27,179 @@ namespace AoC
             RunDay7();
             RunDay8();
             RunDay9();
+            RunDay10();
             Console.ReadKey();
+        }
+
+        private static void RunDay10()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day10.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day10_training.txt").ToList();
+
+            var charGrid = new CharGrid(lines);
+            var start = charGrid.FindChar('S');
+
+            var paths = new List<List<RowCol>>();
+            var firstPath = new List<RowCol>() { start };
+            var finalPath = new List<RowCol>();
+            paths.Add(firstPath);
+
+            while (paths.Any())
+            {
+                var newPaths = new List<List<RowCol>>();
+                foreach (var path in paths)
+                {
+                    var lastLocation = path.Last();
+                    var lastPipe = charGrid[lastLocation.Row, lastLocation.Col];
+
+                    var nextLocations = new List<RowCol>()
+                    {
+                        new RowCol(lastLocation.Row+1, lastLocation.Col),
+                        new RowCol(lastLocation.Row-1, lastLocation.Col),
+                        new RowCol(lastLocation.Row, lastLocation.Col + 1),
+                        new RowCol(lastLocation.Row, lastLocation.Col - 1)
+                    };
+
+                    nextLocations = nextLocations.Where(l => l.Row <= charGrid.MaxRow && l.Col <= charGrid.MaxCol).ToList();
+                    nextLocations = nextLocations.Where(l => l.Row >= 0 && l.Col >= 0).ToList();
+
+                    foreach (var nextLocation in nextLocations)
+                    {
+                        var nextPipe = charGrid[nextLocation.Row, nextLocation.Col];
+                        var direction = (nextLocation - lastLocation).GetDirection();
+
+                        if (path.Count > 1)
+                        {
+                            var reverseDirection = (path[path.Count - 2] - lastLocation).GetDirection();
+                            if (direction == reverseDirection)
+                            {
+                                continue;
+                            }
+                        }
+
+                        if (IsPipeValid(lastPipe, nextPipe, direction))
+                        {
+                            var newPath = path.ToList();
+                            newPath.Add(nextLocation);
+                            newPaths.Add(newPath);
+                        }
+                    }
+                }
+
+                paths.Clear();
+                paths.AddRange(newPaths);
+
+                if (paths.Any(x => charGrid[x.Last().Row, x.Last().Col] == 'S'))
+                {
+                    finalPath = paths.First(x => charGrid[x.Last().Row, x.Last().Col] == 'S');
+                    break;
+                }
+            }
+
+            Console.WriteLine($"Day 10 Part 1: {finalPath.Count / 2}");
+
+            var size = Math.Max(charGrid.MaxCol+ 2,charGrid.MaxRow + 2);
+            var newCharGrid = new CharGrid(Enumerable.Repeat(string.Join("", Enumerable.Repeat('.', size)), size).ToList());
+            foreach (var location in finalPath)
+            {
+                newCharGrid.SetValue(location, charGrid[location.Row, location.Col]);
+            }
+
+            int count = 0;
+            for (int r = 0; r <= newCharGrid.MaxRow; r++)
+            {
+                var isInside = false;
+                var previousChar = '.';
+                var currentPipeSide = PipeSide.None;
+                for (int c = 0; c <= newCharGrid.MaxCol; c++)
+                {
+                    var currentChar = newCharGrid[r, c];
+
+                    if (previousChar == '|')
+                    {
+                        isInside = !isInside;
+                    }
+                    else if ((previousChar == '7' || previousChar == 'J') && currentPipeSide == PipeSide.Inner)
+                    {
+                        isInside = !isInside;
+                    }
+
+                    if (currentChar == '.' && isInside)
+                    {
+                        count++;
+                    }
+
+                    var pipeSideSorter = new PipeSideSorter(currentPipeSide, previousChar, currentChar, Direction.Right);
+                    currentPipeSide = pipeSideSorter.GetNextPipeSide();
+                    previousChar = currentChar;
+                }
+            }
+
+            Console.WriteLine($"Day 10 Part 2: {count}");
+        }
+
+        private static bool IsPipeValid(char lastPipe, char nextPipe, Direction direction)
+        {
+            var validDirections = new List<Direction>();
+            switch (lastPipe)
+            {
+                case 'S':
+                    validDirections = Enum.GetValues(typeof(Direction)).Cast<Direction>().ToList();
+                    break;
+
+                case 'F':
+                    validDirections = new List<Direction>() { Direction.Right, Direction.Down };
+                    break;
+
+                case 'L':
+                    validDirections = new List<Direction>() { Direction.Right, Direction.Up };
+                    break;
+
+                case 'J':
+                    validDirections = new List<Direction>() { Direction.Left, Direction.Up };
+                    break;
+
+                case '7':
+                    validDirections = new List<Direction>() { Direction.Left, Direction.Down };
+                    break;
+
+                case '-':
+                    validDirections = new List<Direction>() { Direction.Right, Direction.Left };
+                    break;
+
+                case '|':
+                    validDirections = new List<Direction>() { Direction.Up, Direction.Down };
+                    break;
+
+            }
+
+            if (!validDirections.Contains(direction))
+            {
+                return false;
+            }
+
+            if (nextPipe == 'S')
+            {
+                return true;
+            }
+
+            switch (direction)
+            {
+                case Direction.Right:
+                    return nextPipe == '-' || nextPipe == 'J' || nextPipe == '7';
+
+                case Direction.Up:
+                    return nextPipe == '|' || nextPipe == 'F' || nextPipe == '7';
+
+                case Direction.Down:
+                    return nextPipe == '|' || nextPipe == 'J' || nextPipe == 'L';
+
+                case Direction.Left:
+                    return nextPipe == '-' || nextPipe == 'F' || nextPipe == 'L';
+
+            }
+
+            return false;
         }
 
         private static void RunDay9()
@@ -52,7 +228,7 @@ namespace AoC
 
                 long previous = 0;
                 long finalValue = 0;
-                for (var i = 1; i<allSequences.Count; i++)
+                for (var i = 1; i < allSequences.Count; i++)
                 {
                     var childSequence = allSequences[i];
 
@@ -142,7 +318,7 @@ namespace AoC
                 var bid = long.Parse(items[1]);
                 hands.Add(new Hand(items[0], bid));
             }
-            
+
             value = hands.OrderBy(x => x).Select((x, i) => x.Bid * (i + 1)).Sum();
 
             Console.WriteLine($"Day 7: {value}");
@@ -317,7 +493,7 @@ namespace AoC
                     filteredSeeds.Add(outputSeed);
                 }
             }
-            
+
             return filteredSeeds;
         }
 

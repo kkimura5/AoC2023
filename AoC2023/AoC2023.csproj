@@ -44,16 +44,23 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Almanac.cs" />
+    <Compile Include="Direction.cs" />
+    <Compile Include="Helpers\CharGrid.cs" />
     <Compile Include="CubeGame.cs" />
     <Compile Include="EngineNumber.cs" />
     <Compile Include="EngineSymbol.cs" />
     <Compile Include="Hand.cs" />
+    <Compile Include="Helpers\Helper.cs" />
     <Compile Include="MapInstruction.cs" />
     <Compile Include="Mapping.cs" />
     <Compile Include="OasisSequence.cs" />
-    <Compile Include="Point2D.cs" />
+    <Compile Include="Helpers\Point2D.cs" />
+    <Compile Include="PipeSide.cs" />
+    <Compile Include="PipeLocation.cs" />
+    <Compile Include="PipeSideSorter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Helpers\RowCol.cs" />
     <Compile Include="ScratchCard.cs" />
     <Compile Include="Seed.cs" />
   </ItemGroup>
@@ -61,6 +68,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Input\Day10.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Input\Day9.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -80,6 +90,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Input\Day3.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Input\Day10_training.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Input\Day9_training.txt">
