@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
@@ -16,6 +18,8 @@ namespace AoC
 {
     internal class Program
     {
+        private static List<string> previousValues = new List<string>();
+        
         static void Main(string[] args)
         {
             RunDay1();
@@ -31,7 +35,156 @@ namespace AoC
             RunDay11();
             RunDay12();
             RunDay13();
+            RunDay14();
             Console.ReadKey();
+        }
+
+        private static void RunDay14()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day14.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day14_training.txt").ToList();
+            var grid = new CharGrid(lines);
+            Roll(grid, Direction.Up);
+            long total = CalculateWeight(grid);
+
+            Console.WriteLine($"Day 14 Part 1: {total}");
+
+            grid = new CharGrid(lines);
+            var directions = new List<Direction>() { Direction.Up, Direction.Left, Direction.Down, Direction.Right };
+            long totalCycles = 1000000000;
+            long i = 0;
+            while (i < totalCycles)
+            {
+                foreach (var direction in directions)
+                {
+                    Roll(grid, direction);
+                }
+                
+                i++;
+
+                if (previousValues.Contains(grid.ToString()))
+                {
+                    var previousIndex = previousValues.IndexOf(grid.ToString()) + 1;
+                    var currentIndex = i;
+                    Console.WriteLine($"found match after {i} rolls, previously at {previousIndex}");
+                    while (i < totalCycles)
+                    {
+                        i += currentIndex - previousIndex;
+                    }
+
+                    i -= currentIndex - previousIndex;
+
+                    Console.WriteLine($"now at index {i}");
+                    previousValues.Clear();
+                }
+                else
+                {
+                    previousValues.Add(grid.ToString());
+                }
+
+                if ( i <= 3)
+                {
+                    Console.WriteLine($"After {i} cycles: ");
+                    for (int r = 0; r <= grid.MaxRow; r++)
+                    {
+                        Console.WriteLine(grid.GetRow(r));
+                    }
+                }
+            }
+
+            total = CalculateWeight(grid);
+            Console.WriteLine($"Day 14 Part 2: {total}");
+        }
+
+        private static void Roll(CharGrid grid, Direction direction)
+        {
+            switch (direction)
+            {
+                case Direction.Up:
+                case Direction.Down:
+                    for (int c = 0; c <= grid.MaxCol; c++)
+                    {
+                        var column = grid.GetCol(c);
+                        var match = Regex.Match(column, "#");
+                        var cubeRockIndices = new List<int>();
+                        while (match.Success)
+                        {
+                            cubeRockIndices.Add(match.Index);
+                            match = match.NextMatch();
+                        }
+
+                        var marker = 0;
+                        var segments = new List<string>();
+                        foreach (var cubeRockIndex in cubeRockIndices)
+                        {
+                            var segment = column.Substring(marker, cubeRockIndex - marker);
+                            string output1 = $"{string.Concat(direction == Direction.Up ? segment.OrderByDescending(x => x) : segment.OrderBy(x => x))}";
+                            segments.Add($"{output1}#");
+                            marker = cubeRockIndex + 1;
+                        }
+
+                        var finalSegment = column.Substring(marker);
+                        string output = $"{string.Concat(direction == Direction.Up ? finalSegment.OrderByDescending(x => x) : finalSegment.OrderBy(x => x))}";
+                        segments.Add(output);
+
+                        string newValue = string.Join(string.Empty, segments);
+                        grid.SetCol(c, newValue);
+                    }
+                    break;
+
+                case Direction.Left:
+                case Direction.Right:
+                    for (int r = 0; r <= grid.MaxRow; r++)
+                    {
+                        var row = grid.GetRow(r);
+                        var match = Regex.Match(row, "#");
+
+                        var cubeRockIndices = new List<int>();
+                        while (match.Success)
+                        {
+                            cubeRockIndices.Add(match.Index);
+                            match = match.NextMatch();
+                        }
+
+                        var marker = 0;
+                        var segments = new List<string>();
+                        foreach (var cubeRockIndex in cubeRockIndices)
+                        {
+                            var segment = row.Substring(marker, cubeRockIndex - marker);
+                            string output1 = $"{string.Concat(direction == Direction.Left ? segment.OrderByDescending(x => x) : segment.OrderBy(x => x))}";
+                            segments.Add($"{output1}#");
+                            marker = cubeRockIndex + 1;
+                        }
+
+                        var finalSegment = row.Substring(marker);
+                        string output = $"{string.Concat(direction == Direction.Left ? finalSegment.OrderByDescending(x => x) : finalSegment.OrderBy(x => x))}";
+                        segments.Add(output);
+
+                        string newValue = string.Join(string.Empty, segments);
+                        grid.SetRow(r, newValue);
+                    }
+
+                    break;
+
+            }
+        }
+
+        private static long CalculateWeight(CharGrid grid)
+        {
+            long total = 0;
+            for (int c = 0; c <= grid.MaxCol; c++)
+            {
+                var column = grid.GetCol(c);
+                for (int r = 0; r < column.Length; r++)
+                {
+                    if (column[r] == 'O')
+                    {
+                        total += column.Length - r;
+                    }
+                }
+            }
+
+            return total;
         }
 
         private static void RunDay13()

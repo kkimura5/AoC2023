@@ -12,26 +12,47 @@ namespace AoC
 {
     internal class CharGrid
     {
-        private List<string> rows;
+        private char[,] grid;
 
         public CharGrid(List<string> rows)
         {
-            this.rows= rows;
+            grid = new char[rows.Count, rows[0].Length];
+            for (int r = 0; r < rows.Count; r++)
+            {
+                for (int c = 0; c < rows[r].Length; c++)
+                {
+                    grid[r, c] = rows[r][c];
+                }
+            }
+        }
+
+        public CharGrid(char[,] chars)
+        {
+            grid = chars;
         }
 
         public char this[int row, int col]
         {
-            get { return rows[row][col]; }
+            get { return grid[row,col]; }
         }
 
-        public int MaxCol => rows.First().Length - 1;
-        public int MaxRow => rows.Count - 1;
-        public string GetRow(int index) => rows[index];
-        public string GetCol(int index) => string.Concat(rows.Select(x => x[index]));
+        public char[,] GetGrid() => grid;
         public override string ToString()
         {
-            return string.Join(Environment.NewLine, rows);
+            var output = string.Empty;
+            for (int i = 0; i <= MaxRow; i++)
+            {
+                output += GetRow(i);
+            }
+
+            return output;
         }
+        public int MaxCol => grid.GetLength(1)-1;
+        public int MaxRow => grid.GetLength(0)-1;
+        public string GetRow(int index) => string.Concat(Enumerable.Range(0, grid.GetLength(1))
+                .Select(x => grid[index, x]));
+        public string GetCol(int index) => string.Concat(Enumerable.Range(0, grid.GetLength(0))
+                .Select(x => grid[x, index]));
 
         public RowCol FindChar(char ch)
         {
@@ -49,12 +70,25 @@ namespace AoC
             return new RowCol(-1,-1);
         }
 
+        internal void SetRow(int row, string value)
+        {
+            for (int c = 0; c < value.Length; c++)
+            {
+                grid[row,c] = value[c];
+            }
+        }
+
+        internal void SetCol(int col, string value)
+        {
+            for (int r = 0; r < value.Length; r++)
+            {
+                grid[r, col] = value[r];
+            }
+        }
+
         internal void SetValue(RowCol location, char value)
         {
-            string row = rows[location.Row];
-            var start = location.Col == 0 ? string.Empty : row.Substring(0, location.Col);
-            var end = location.Col > MaxCol ? string.Empty : row.Substring(location.Col + 1);
-            rows[location.Row] = $"{start}{value}{end}"; 
+            grid[location.Row, location.Col] = value; 
         }
     }
 }
