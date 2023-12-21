@@ -26,6 +26,13 @@ namespace AoC
 
         public int MaxCol => rows.First().Length - 1;
         public int MaxRow => rows.Count - 1;
+        public string GetRow(int index) => rows[index];
+        public string GetCol(int index) => string.Concat(rows.Select(x => x[index]));
+        public override string ToString()
+        {
+            return string.Join(Environment.NewLine, rows);
+        }
+
         public RowCol FindChar(char ch)
         {
             for (int r = 0; r < MaxRow; r++) 
@@ -40,11 +47,6 @@ namespace AoC
             }
 
             return new RowCol(-1,-1);
-        }
-
-        internal int GetInsideCount()
-        {
-            return string.Join("", rows).Count(x => x == 'I');
         }
 
         internal void SetValue(RowCol location, char value)

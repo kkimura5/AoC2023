@@ -28,7 +28,219 @@ namespace AoC
             RunDay8();
             RunDay9();
             RunDay10();
+            RunDay11();
+            RunDay12();
+            RunDay13();
             Console.ReadKey();
+        }
+
+        private static void RunDay13()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day13.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day13_training.txt").ToList();
+            var collection = new List<string>();
+            var images = new List<CharGrid>();
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrEmpty(line) && collection.Any())
+                {
+                    images.Add(new CharGrid(collection));
+                    collection = new List<string>();
+                }
+                else
+                {
+                    collection.Add(line);
+                }
+            }
+            
+            images.Add(new CharGrid(collection));
+
+            long sum = 0;
+            var axes = new Dictionary<int, RowCol>();
+            foreach (var image in images)
+            {
+                var index = images.IndexOf(image);
+                for (int r = 1; r <= image.MaxRow; r++)
+                {
+                    if (IsMirrored(image.MaxRow, image.GetRow, r))
+                    {
+                        sum += 100 * r;
+                        axes[index] = new RowCol(r, 0);
+                    }
+                }
+
+                for (int c = 1; c <= image.MaxCol; c++)
+                {
+                    if (IsMirrored(image.MaxCol, image.GetCol, c))
+                    {
+                        sum += c;
+                        axes[index] = new RowCol(0, c);
+                    }
+                }
+            }
+
+            Console.WriteLine($"Day 13 Part 1: {sum}");
+
+            long sum2 = 0;
+            foreach (var image in images)
+            {
+                var index = images.IndexOf(image);
+                var isFound = false;
+                for (int smudgeRow = 0; smudgeRow <= image.MaxRow; smudgeRow++)
+                {
+                    if (isFound)
+                    {
+                        break;
+                    }
+
+                    for (int smudgeCol = 0; smudgeCol <= image.MaxCol; smudgeCol++)
+                    {
+                        if (isFound)
+                        {
+                            break;
+                        }
+
+                        var prevValue = image[smudgeRow, smudgeCol];
+                        image.SetValue(new RowCol(smudgeRow, smudgeCol), prevValue == '.' ? '#' : '.');
+                        for (int r = 1; r <= image.MaxRow; r++)
+                        {
+                            if (IsMirrored(image.MaxRow, image.GetRow, r) && r != axes[index].Row)
+                            {
+                                sum2 += 100 * r;
+                                isFound = true;
+                                break;
+                            }
+                        }
+
+
+                        if (!isFound)
+                        {
+                            for (int c = 1; c <= image.MaxCol; c++)
+                            {
+                                if (IsMirrored(image.MaxCol, image.GetCol, c) && c != axes[index].Col)
+                                {
+                                    sum2 += c;
+                                    isFound = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        image.SetValue(new RowCol(smudgeRow, smudgeCol), prevValue);
+
+                    }
+                }
+            }
+
+            Console.WriteLine($"Day 13 Part 2: {sum2}");
+        }
+
+        private static bool IsMirrored(int maxValue, Func<int, string> getLineDelegate, int axisIndex)
+        {
+            var isMirroredBetween = true;
+            for (int i = 1; i <= axisIndex; i++)
+            {
+                if (axisIndex + i - 1 > maxValue)
+                {
+                    break;
+                }
+
+                string str1 = getLineDelegate(axisIndex - i);
+                string str2 = getLineDelegate(axisIndex + i - 1);
+                if (str1 != str2)
+                {
+                    isMirroredBetween = false;
+                }
+            }
+
+            return isMirroredBetween;
+        }
+
+        private static void RunDay12()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day12.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day12_training.txt").ToList();
+            long sum = 0;
+            long sum2 = 0;
+            foreach (var line in lines)
+            {
+                var sections = line.Split(' ');
+                var numbers = sections[1].Trim().Split(',').Select(x => int.Parse(x)).ToList();
+                string status = sections[0];
+
+                var springGroup = new SpringGroup(status, numbers);
+                var numArrangements1 = springGroup.GetNumArrangements();
+                sum += numArrangements1;
+
+                var extraGroup = new SpringGroup($"{status}?{status}?{status}?{status}?{status}", Enumerable.Repeat(numbers,5).SelectMany(x => x).ToList());
+                var numArrangements3 = extraGroup.GetNumArrangements();
+
+                sum2 += extraGroup.GetNumArrangements();
+            }
+
+            Console.WriteLine($"Day 12 Part 1: {sum}");
+            Console.WriteLine($"Day 12 Part 2: {sum2}");
+        }
+
+        private static void RunDay11()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day11.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day11_training.txt").ToList();
+            var charGrid = new CharGrid(lines);
+            var planets = new List<RowCol>();
+            var doubledRows = new List<int>();
+            var doubledColumns = new List<int>();
+
+            for (int r = 0; r <= charGrid.MaxRow; r++)
+            {
+                if (!charGrid.GetRow(r).Contains('#'))
+                {
+                    doubledRows.Add(r);
+                }
+
+                for (int c = 0; c <= charGrid.MaxCol; c++)
+                {
+                    if (!charGrid.GetCol(c).Contains('#') && !doubledColumns.Contains(c))
+                    {
+                        doubledColumns.Add(c);
+                    }
+
+                    if (charGrid[r, c] == '#')
+                    {
+                        planets.Add(new RowCol(r, c));
+                    }
+                }
+            }
+
+            long sum = SumPlanetDistances(planets, doubledRows, doubledColumns, 1);
+            Console.WriteLine($"Day 11 Part 1: {sum}");
+            sum = SumPlanetDistances(planets, doubledRows, doubledColumns, 999999);
+            Console.WriteLine($"Day 11 Part 2 (1000000): {sum}");
+        }
+
+        private static long SumPlanetDistances(List<RowCol> planets, List<int> doubledRows, List<int> doubledColumns, long multiplier)
+        {
+            long sum = 0;
+            for (int i = 0; i < planets.Count; i++)
+            {
+                var selectedPlanet = planets[i];
+                for (int j = i + 1; j < planets.Count; j++)
+                {
+                    var otherPlanet = planets[j];
+                    var difference = otherPlanet - selectedPlanet;
+                    sum += Math.Abs(difference.Col) + Math.Abs(difference.Row);
+
+                    var startRow = Math.Min(otherPlanet.Row, selectedPlanet.Row);
+                    var endRow = Math.Max(otherPlanet.Row, selectedPlanet.Row);
+                    sum += Enumerable.Range(startRow, endRow - startRow).Intersect(doubledRows).Count() * multiplier;
+
+                    var startCol = Math.Min(otherPlanet.Col, selectedPlanet.Col);
+                    var endCol = Math.Max(otherPlanet.Col, selectedPlanet.Col);
+                    sum += Enumerable.Range(startCol, endCol - startCol).Intersect(doubledColumns).Count() * multiplier;
+                }
+            }
+
+            return sum;
         }
 
         private static void RunDay10()
