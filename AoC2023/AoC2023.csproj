@@ -71,6 +71,8 @@
     <Compile Include="EngineSymbol.cs" />
     <Compile Include="Hand.cs" />
     <Compile Include="Helpers\Helper.cs" />
+    <Compile Include="Lens.cs" />
+    <Compile Include="LensBox.cs" />
     <Compile Include="MapInstruction.cs" />
     <Compile Include="Mapping.cs" />
     <Compile Include="OasisSequence.cs" />
@@ -88,10 +90,16 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Input\Day15.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Input\Day14.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Input\Day13.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Input\Day15_training.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Input\Day14_training.txt">

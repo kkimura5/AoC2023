@@ -36,7 +36,86 @@ namespace AoC
             RunDay12();
             RunDay13();
             RunDay14();
+            RunDay15();
             Console.ReadKey();
+        }
+
+        private static void RunDay15()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day15.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day15_training.txt").ToList();
+
+            var list = lines.First().Split(',').ToList();
+
+            long sum = 0;
+            var boxes = new List<LensBox>();
+            foreach (var item in list)
+            {
+                long value = 0;
+                foreach (char c in item)
+                {
+                    value += (int)c;
+                    value *= 17;
+                    value %= 256;
+                }
+
+                sum += value;
+
+                var match = Regex.Match(item, "-|=");
+                var boxNumber = 0;
+                foreach(char c in item.Substring(0, match.Index))
+                {
+                    boxNumber += (int)c;
+                    boxNumber *= 17;
+                    boxNumber %= 256;
+
+                    if (!boxes.Any(x => x.BoxNumber == boxNumber))
+                    {
+                        boxes.Add(new LensBox((int)boxNumber));
+                    }
+                }
+
+                var box = boxes.Single(x => x.BoxNumber == boxNumber);
+                string label = item.Substring(0, match.Index);
+                
+                if (match.Success)
+                {
+                    switch (match.Value)
+                    {
+                        case "-":
+                            box.Lenses = box.Lenses.Where(x => x.Label != label).ToList(); 
+                            break;
+
+                        case "=":
+                            var newLens = new Lens() { Label = label, FocalLength = int.Parse(item.Substring(match.Index + 1)) };
+                            if (box.Lenses.Any(x => x.Label == label))
+                            {
+                                var oldLens = box.Lenses.Single(x => x.Label == label);
+                                var index = box.Lenses.IndexOf(oldLens);
+                                box.Lenses.Remove(oldLens);
+                                box.Lenses.Insert(index, newLens);
+                            }
+                            else
+                            {
+                                box.Lenses.Add(newLens);
+                            }
+                            break;
+                    }
+                }
+            }
+
+            Console.WriteLine($"Day 15 Part 1: {sum}");
+            long lensValue = 0;
+            foreach (var box in boxes)
+            {
+                foreach (var lens in box.Lenses)
+                {
+                    var lensIndex = box.Lenses.IndexOf(lens) + 1;
+                    lensValue += (box.BoxNumber + 1) * lensIndex * lens.FocalLength;
+                }
+            }
+
+            Console.WriteLine($"Day 15 Part 2: {lensValue}");
         }
 
         private static void RunDay14()
@@ -82,14 +161,14 @@ namespace AoC
                     previousValues.Add(grid.ToString());
                 }
 
-                if ( i <= 3)
-                {
-                    Console.WriteLine($"After {i} cycles: ");
-                    for (int r = 0; r <= grid.MaxRow; r++)
-                    {
-                        Console.WriteLine(grid.GetRow(r));
-                    }
-                }
+                //if ( i <= 3)
+                //{
+                //    Console.WriteLine($"After {i} cycles: ");
+                //    for (int r = 0; r <= grid.MaxRow; r++)
+                //    {
+                //        Console.WriteLine(grid.GetRow(r));
+                //    }
+                //}
             }
 
             total = CalculateWeight(grid);
