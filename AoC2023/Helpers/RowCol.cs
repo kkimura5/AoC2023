@@ -52,6 +52,27 @@ namespace AoC
         {
             return $"({Row}, {Col})";
         }
+
+        internal RowCol GetNext(Direction direction)
+        {
+            switch (direction)
+            {
+                case Direction.Up:
+                    return new RowCol(Row - 1, Col);
+
+                case Direction.Down:
+                    return new RowCol(Row + 1, Col);
+
+                case Direction.Left:
+                    return new RowCol(Row, Col - 1);
+
+                case Direction.Right:
+                    return new RowCol(Row, Col + 1);
+            }
+
+            throw new Exception();
+        }
+
         public static RowCol operator -(RowCol first, RowCol second)
         {
             return new RowCol(first.Row - second.Row, first.Col - second.Col);

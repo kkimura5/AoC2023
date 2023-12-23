@@ -37,7 +37,161 @@ namespace AoC
             RunDay13();
             RunDay14();
             RunDay15();
+            RunDay16();
             Console.ReadKey();
+        }
+
+        private static void RunDay16()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day16.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day16_training.txt").ToList();
+
+            var total1 = SimulateBeamPath(lines, new Tuple<RowCol, Direction>(new RowCol(0, 0), Direction.Right));
+            Console.WriteLine($"Day 16 part 1: {total1}");
+
+            var maxValue = 0;
+            for (int r = 0; r < lines.Count; r++)
+            {
+                maxValue = Math.Max(SimulateBeamPath(lines, new Tuple<RowCol, Direction>(new RowCol(r, 0), Direction.Right)), maxValue);
+                maxValue = Math.Max(SimulateBeamPath(lines, new Tuple<RowCol, Direction>(new RowCol(r, lines[0].Length - 1), Direction.Left)), maxValue);
+            }
+
+            for (int c = 0; c < lines.Count; c++)
+            {
+                maxValue = Math.Max(SimulateBeamPath(lines, new Tuple<RowCol, Direction>(new RowCol(0, c), Direction.Down)), maxValue);
+                maxValue = Math.Max(SimulateBeamPath(lines, new Tuple<RowCol, Direction>(new RowCol(lines.Count-1, c), Direction.Up)), maxValue);
+
+            }
+
+            Console.WriteLine($"Day 16 part 2: {maxValue}");
+        }
+
+        private static int SimulateBeamPath(List<string> lines, Tuple<RowCol, Direction> initialLocation)
+        {
+            var charGrid = new CharGrid(lines);
+            var statusGrid = new CharGrid(lines);
+
+            var beamPaths = new List<Tuple<RowCol, Direction>>() { initialLocation };
+            var cachedLocations = new List<Tuple<RowCol, Direction>>();
+
+            while (beamPaths.Any())
+            {
+                var newBeamPaths = new List<Tuple<RowCol, Direction>>();
+                foreach (var beamPath in beamPaths)
+                {
+                    cachedLocations.Add(beamPath);
+                    var currentChar = charGrid[beamPath.Item1.Row, beamPath.Item1.Col];
+                    statusGrid.SetValue(beamPath.Item1, '#');
+                    switch (currentChar)
+                    {
+                        case '.':
+                            var currentDirection = beamPath.Item2;
+                            var nextLocation = beamPath.Item1.GetNext(currentDirection);
+                            var nextDirection = currentDirection;
+                            if (charGrid.IsLocationWithin(nextLocation))
+                            {
+                                newBeamPaths.Add(new Tuple<RowCol, Direction>(nextLocation, currentDirection));
+                            }
+
+                            break;
+
+                        case '|':
+                        case '-':
+                            var possibleBeamPaths = HandleSplitter(currentChar, beamPath);
+                            newBeamPaths.AddRange(possibleBeamPaths.Where(x => charGrid.IsLocationWithin(x.Item1)));
+                            break;
+
+                        case '\\':
+                        case '/':
+                            var newBeamPath = HandleReflector(currentChar, beamPath);
+                            if (charGrid.IsLocationWithin(newBeamPath.Item1))
+                            {
+                                newBeamPaths.Add(newBeamPath);
+                            }
+                            break;
+                    }
+                }
+
+                beamPaths.Clear();
+                foreach (var beamPath in newBeamPaths)
+                {
+                    if (!cachedLocations.Any(x => x.Item1 == beamPath.Item1 && x.Item2 == beamPath.Item2))
+                    {
+                        beamPaths.Add(beamPath);
+                    }
+                }
+            }
+
+            return statusGrid.ToString().Count(x => x == '#');
+        }
+
+        private static IEnumerable<Tuple<RowCol, Direction>> HandleSplitter(char currentChar, Tuple<RowCol, Direction> beamPath)
+        {
+            var currentLocation = beamPath.Item1;
+            var currentDirection = beamPath.Item2;
+            var newBeamPaths = new List<Tuple<RowCol, Direction>>();
+
+            if (currentChar == '|')
+            {
+                if (currentDirection == Direction.Up || currentDirection == Direction.Down) 
+                {
+                    newBeamPaths.Add(new Tuple<RowCol, Direction>(beamPath.Item1.GetNext(currentDirection), currentDirection));
+                }
+                else
+                {
+                    newBeamPaths.Add(new Tuple<RowCol, Direction>(currentLocation.GetNext(Direction.Up), Direction.Up));
+                    newBeamPaths.Add(new Tuple<RowCol, Direction>(currentLocation.GetNext(Direction.Down), Direction.Down));
+                }
+            }
+            else
+            {
+                if (currentDirection == Direction.Right || currentDirection == Direction.Left)
+                {
+                    newBeamPaths.Add(new Tuple<RowCol, Direction>(currentLocation.GetNext(currentDirection), currentDirection));
+                }
+                else
+                {
+                    newBeamPaths.Add(new Tuple<RowCol, Direction>(currentLocation.GetNext(Direction.Right), Direction.Right));
+                    newBeamPaths.Add(new Tuple<RowCol, Direction>(currentLocation.GetNext(Direction.Left), Direction.Left));
+                }
+            }
+
+            return newBeamPaths;
+        }
+
+        private static Tuple<RowCol, Direction> HandleReflector(char currentChar, Tuple<RowCol, Direction> beamPath)
+        {
+            RowCol nextLocation;
+            Direction nextDirection;
+            Tuple<RowCol, Direction> newBeamPath = null;
+            switch (beamPath.Item2)
+            {
+                case Direction.Up:
+                    nextDirection = currentChar == '\\' ?  Direction.Left : Direction.Right;
+                    nextLocation = beamPath.Item1.GetNext(nextDirection);
+                    newBeamPath = new Tuple<RowCol, Direction>(nextLocation, nextDirection);
+                    break;
+
+                case Direction.Left:
+                    nextDirection = currentChar == '\\' ? Direction.Up : Direction.Down;
+                    nextLocation = beamPath.Item1.GetNext(nextDirection);
+                    newBeamPath = new Tuple<RowCol, Direction>(nextLocation, nextDirection);
+                    break;
+
+                case Direction.Right:
+                    nextDirection = currentChar == '\\' ? Direction.Down : Direction.Up;
+                    nextLocation = beamPath.Item1.GetNext(nextDirection);
+                    newBeamPath = new Tuple<RowCol, Direction>(nextLocation, nextDirection);
+                    break;
+
+                case Direction.Down:
+                    nextDirection = currentChar == '\\' ? Direction.Right : Direction.Left;
+                    nextLocation = beamPath.Item1.GetNext(nextDirection);
+                    newBeamPath = new Tuple<RowCol, Direction>(nextLocation, nextDirection);
+                    break;
+            }
+
+            return newBeamPath;
         }
 
         private static void RunDay15()

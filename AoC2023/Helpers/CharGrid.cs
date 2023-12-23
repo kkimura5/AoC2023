@@ -90,5 +90,11 @@ namespace AoC
         {
             grid[location.Row, location.Col] = value; 
         }
+
+        internal bool IsLocationWithin(RowCol nextLocation)
+        {
+            return nextLocation.Row >= 0 && nextLocation.Col >= 0 
+                && nextLocation.Row <= MaxRow && nextLocation.Col <= MaxCol;
+        }
     }
 }
