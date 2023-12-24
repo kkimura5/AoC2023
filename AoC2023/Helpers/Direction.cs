@@ -8,6 +8,7 @@ namespace AoC
 {
     internal enum Direction
     {
+        None,
         Up,
         Down, Left, Right
     }

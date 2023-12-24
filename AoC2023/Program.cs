@@ -37,8 +37,242 @@ namespace AoC
             RunDay13();
             RunDay14();
             RunDay15();
-            RunDay16();
+            //RunDay16();
+            //RunDay17Part1();
+            RunDay17Part2();
             Console.ReadKey();
+        }
+
+        private static void RunDay17Part2()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day17.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day17_training.txt").ToList();
+            var charGrid = new CharGrid(lines);
+            var paths = new List<LavaPath>();
+            paths.Add(new LavaPath(new RowCol(0, 0), 0, new List<Direction>(), new List<string>()));
+            var minScoreByLocation = new Dictionary<string, int>();
+            minScoreByLocation.Add($"{paths.First().GetSummary()}", 0);
+            var finalLocation = new RowCol(charGrid.MaxRow, charGrid.MaxCol);
+            var stepCount = 0;
+            while (paths.Any())
+            {
+                var newPaths = new List<LavaPath>();
+                var fasterPathsFound = new List<string>();
+                foreach (var path in paths)
+                {
+                    if (fasterPathsFound.Intersect(path.PreviousLocations).Any())
+                    {
+                        continue;
+                    }
+
+                    var directions = Enum.GetValues(typeof(Direction)).Cast<Direction>().ToList();
+                    directions.Remove(Direction.None);
+                    switch (path.PreviousDirections.FirstOrDefault())
+                    {
+                        case Direction.Up:
+                            directions.Remove(Direction.Down);
+                            break;
+
+                        case Direction.Down:
+                            directions.Remove(Direction.Up);
+                            break;
+
+                        case Direction.Left:
+                            directions.Remove(Direction.Right);
+                            break;
+
+                        case Direction.Right:
+                            directions.Remove(Direction.Left);
+                            break;
+                    }
+
+                    foreach (var direction in directions)
+                    {
+                        if (path.PreviousDirections.Count < 4)
+                        {
+                            if (path.PreviousDirections.Any() && direction != path.PreviousDirections.First())
+                            {
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            if (path.PreviousDirections.Count >= 10 && path.PreviousDirections.Take(10).All(x => x == direction))
+                            {
+                                // max of 10
+                                continue;
+                            }
+
+                            if (direction == path.PreviousDirections.First() || path.PreviousDirections.Take(4).All(x => x == path.PreviousDirections.First()))
+                            {
+                                // at least 4 before changing, or stay in the same direction
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+
+                        var location = path.CurrentLocation.GetNext(direction);
+                        if (charGrid.IsLocationWithin(location))
+                        {
+                            int newScore = path.Score + int.Parse($"{charGrid[location.Row, location.Col]}");
+                            var previousDirections = path.PreviousDirections.Take(10).ToList();
+                            previousDirections.Insert(0, direction);
+
+                            var previousLocations = path.PreviousLocations.ToList();
+                            var newPath = new LavaPath(location, newScore, previousDirections, previousLocations);
+                            string newPathSummary = newPath.GetSummary();
+                            previousLocations.Add(newPathSummary);
+
+                            if (location == finalLocation)
+                            {
+                                if (newPath.PreviousDirections.Take(4).All(x => x == newPath.PreviousDirections.First()))
+                                {
+                                    if (minScoreByLocation.ContainsKey(newPathSummary))
+                                    {
+                                        if (newScore < minScoreByLocation[newPathSummary])
+                                        {
+                                            minScoreByLocation[newPathSummary] = newPath.Score;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        minScoreByLocation.Add(newPathSummary, newPath.Score);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (minScoreByLocation.ContainsKey(newPathSummary))
+                                {
+                                    if (newScore < minScoreByLocation[newPathSummary])
+                                    {
+                                        minScoreByLocation[newPathSummary] = newPath.Score;
+                                        newPaths = newPaths.Where(x => !x.PreviousLocations.Contains(newPathSummary) && x.GetSummary() != newPathSummary).ToList();
+                                        fasterPathsFound.Add(newPathSummary);
+                                        newPaths.Add(newPath);
+                                    }
+                                }
+                                else
+                                {
+                                    minScoreByLocation.Add(newPathSummary, newPath.Score);
+                                    newPaths.Add(newPath);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                paths.Clear();
+                if (newPaths.Count > 2000)
+                {
+                    var maxDistance = newPaths.Max(x => x.CurrentLocation.Col + x.CurrentLocation.Row);
+                    var minDistance = newPaths.Min(x => x.CurrentLocation.Col + x.CurrentLocation.Row);
+                    if (minDistance < 0.6 * maxDistance)
+                    {
+                        newPaths = newPaths.Where(x => x.CurrentLocation.Col + x.CurrentLocation.Row > minDistance).ToList();
+                    }
+                    //newPaths = newPaths.OrderBy(x => x.Score / (x.CurrentLocation.Col + x.CurrentLocation.Row)).Take((int)(newPaths.Count() * 0.95)).ToList();
+                }
+
+                paths = newPaths.Where(x => x.CurrentLocation != finalLocation).ToList();
+                var roughLocation = newPaths.Any() ? newPaths.First().CurrentLocation.Row + newPaths.First().CurrentLocation.Col : 0;
+                Console.WriteLine($"step {++stepCount}: Reached: {roughLocation}; numPaths {paths.Count}");
+            }
+
+            var finalLocationScores = minScoreByLocation.Where(x => x.Key.Contains(finalLocation.ToString())).ToList();
+            Console.WriteLine($"Day 17 part 2: {finalLocationScores.Min(x => x.Value)}");
+        }
+
+        private static void RunDay17Part1()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day17.txt").ToList();
+            //var lines = File.ReadAllLines(".\\Input\\Day17_training.txt").ToList();
+            var charGrid = new CharGrid(lines);
+            var paths = new List<LavaPath>();
+            paths.Add(new LavaPath(new RowCol(0, 0), 0, new List<Direction>(), new List<string>()));
+            var minScoreByLocation = new Dictionary<string, int>();
+            minScoreByLocation.Add($"{paths.First().GetSummary()}", 0);
+            var finalLocation = new RowCol(charGrid.MaxRow, charGrid.MaxCol);
+            while (paths.Any())
+            {
+                var newPaths = new List<LavaPath>();
+                var fasterPathsFound = new List<string>();
+                foreach (var path in paths)
+                {
+                    if (fasterPathsFound.Intersect(path.PreviousLocations).Any())
+                    {
+                        continue;
+                    }
+                    
+                    var directions = Enum.GetValues(typeof(Direction)).Cast<Direction>().ToList();
+                    directions.Remove(Direction.None);
+                    switch (path.PreviousDirections.FirstOrDefault())
+                    {
+                        case Direction.Up:
+                            directions.Remove(Direction.Down);
+                            break;
+
+                        case Direction.Down:
+                            directions.Remove(Direction.Up);
+                            break;
+
+                        case Direction.Left:
+                            directions.Remove(Direction.Right);
+                            break;
+                        
+                        case Direction.Right:
+                            directions.Remove(Direction.Left);
+                            break;
+                    }
+
+                    foreach (var direction in directions)
+                    {
+                        if (path.PreviousDirections.Count >= 3 && path.PreviousDirections.Take(3).All(x => x == direction))
+                        {
+                            continue;
+                        }
+
+                        var location = path.CurrentLocation.GetNext(direction);
+                        if (charGrid.IsLocationWithin(location))
+                        {
+                            int newScore = path.Score + int.Parse($"{charGrid[location.Row, location.Col]}");
+                            var previousDirections = path.PreviousDirections.Take(2).ToList();
+                            previousDirections.Insert(0, direction);
+
+                            var previousLocations = path.PreviousLocations.ToList();
+                            var newPath = new LavaPath(location, newScore, previousDirections, previousLocations);
+                            string newPathSummary = newPath.GetSummary();
+                            previousLocations.Add(newPathSummary);
+
+                            if (minScoreByLocation.ContainsKey(newPathSummary))
+                            {
+                                if (newScore < minScoreByLocation[newPathSummary])
+                                {
+                                    minScoreByLocation[newPathSummary] = newPath.Score;
+                                    newPaths = newPaths.Where(x => !x.PreviousLocations.Contains(newPathSummary) && x.GetSummary() != newPathSummary).ToList();
+                                    fasterPathsFound.Add(newPathSummary);
+                                    newPaths.Add(newPath);
+                                }
+                            }
+                            else
+                            {
+                                minScoreByLocation.Add(newPathSummary, newPath.Score);
+                                newPaths.Add(newPath);
+                            }
+                        }
+                    }
+                }
+
+                paths.Clear();
+                paths = newPaths.Where(x => x.CurrentLocation != finalLocation).ToList();
+                var minLocation = newPaths.Any() ? newPaths.First().CurrentLocation.Row + newPaths.First().CurrentLocation.Col : 0;
+                Console.WriteLine($"Reached: {minLocation}; numPaths {paths.Count}");
+            }
+
+            var finalLocationScores = minScoreByLocation.Where(x => x.Key.Contains(finalLocation.ToString())).ToList();
+            Console.WriteLine($"Day 17 part 1: {finalLocationScores.Min(x=> x.Value)}");
         }
 
         private static void RunDay16()
